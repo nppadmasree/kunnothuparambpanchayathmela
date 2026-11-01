@@ -45,3 +45,11 @@ Upload schools first and wait for them to appear in the school list, then upload
 - School directory is public, student directory and private results are restricted to admin in Firestore rules.
 - Public result rules restrict top-level fields, and the site deliberately excludes numeric marks from public documents. For higher-assurance deployments, consider stricter nested participant schema validation and server-side publishing.
 - Test login and one sample event before entering all competition results.
+
+
+## Version 3.1 festival theme and announcements
+- Header uses the supplied festival poster as a blurred decorative background, with corrected Malayalam title. Upload festival-theme.jpg alongside index.html.
+- Public displays at most 3 announcements. Admin can clear ALL manual and automatic announcements. New stage-order announcements prune older automatic messages.
+- Publish the UPDATED firestore.rules before testing the Clear all button (admin delete permission for autoAnnouncements).
+- Automatic changes clear manually entered notices to prioritize schedule updates. Admin can republish manual notices afterwards.
+- Existing Firebase config must be preserved/verified against the active Firebase project before deployment.

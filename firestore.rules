@@ -21,13 +21,14 @@ service cloud.firestore {
     match /settings/announcements {
       allow read: if true;
       allow write: if admin() && request.resource.data.keys().hasOnly(['items','updatedAt']) &&
-        request.resource.data.items is list && request.resource.data.items.size() <= 30;
+        request.resource.data.items is list && request.resource.data.items.size() <= 3;
     }
     match /autoAnnouncements/{id} {
       allow read: if true;
       allow create: if admin() && request.resource.data.keys().hasOnly(['message','createdAt']) &&
         request.resource.data.message is string && request.resource.data.message.size() <= 600;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if admin();
     }
     match /schools/{id} {
       allow read: if true;
