@@ -1,26 +1,66 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAdmin() {
-      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    function admin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin';
     }
     match /admins/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, write: if false;
     }
-    match /stages/{stageId} {
+    match /stages/{id} {
       allow read: if true;
-      allow create, update: if isAdmin() && stageId in ['1','2','3'] && request.resource.data.keys().hasOnly(['id','name','time','status','current','events']) && request.resource.data.id == stageId && request.resource.data.status in ['upcoming','running','done'] && request.resource.data.events is list && request.resource.data.events.size() <= 100;
+      allow create, update: if admin() && id in ['1','2','3'] &&
+        request.resource.data.keys().hasOnly(['id','name','time','status','current','events']) &&
+        request.resource.data.id == id && request.resource.data.status in ['upcoming','running','done'] &&
+        request.resource.data.events is list && request.resource.data.events.size() <= 100;
       allow delete: if false;
     }
     match /settings/announcements {
       allow read: if true;
-      allow write: if isAdmin() && request.resource.data.keys().hasOnly(['items','updatedAt']) && request.resource.data.items is list && request.resource.data.items.size() <= 30;
+      allow write: if admin() && request.resource.data.keys().hasOnly(['items','updatedAt']) &&
+        request.resource.data.items is list && request.resource.data.items.size() <= 30;
     }
-    match /results/{resultId} {
+    match /autoAnnouncements/{id} {
       allow read: if true;
-      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['stage','event','winner','place','createdAt']) && request.resource.data.stage in ['1','2','3'] && request.resource.data.event is string && request.resource.data.winner is string && request.resource.data.place is string;
+      allow create: if admin() && request.resource.data.keys().hasOnly(['message','createdAt']) &&
+        request.resource.data.message is string && request.resource.data.message.size() <= 600;
       allow update, delete: if false;
+    }
+    match /schools/{id} {
+      allow read: if true;
+      allow create, update: if admin() && request.resource.data.keys().hasOnly(['id','name']) &&
+        request.resource.data.id == id && request.resource.data.name is string;
+      allow delete: if false;
+    }
+    match /students/{chest} {
+      allow read, create, update: if admin();
+      allow delete: if false;
+    }
+    match /privateResults/{id} {
+      allow read, create, update: if admin();
+      allow delete: if false;
+    }
+    match /publicResults/{id} {
+      allow read: if true;
+      allow create, update: if admin() &&
+        request.resource.data.keys().hasOnly(['stage','event','participants','updatedAt']) &&
+        request.resource.data.stage in ['1','2','3'] &&
+        request.resource.data.event is string &&
+        request.resource.data.participants is list && request.resource.data.participants.size() <= 25;
+      allow delete: if false;
+    }
+    match /gallery/{id} {
+      allow read: if true;
+      allow create: if admin() && request.resource.data.keys().hasOnly(['url','path','caption','stage','createdAt']) &&
+        request.resource.data.stage in ['1','2','3'];
+      allow update, delete: if false;
+    }
+    match /results/{id} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

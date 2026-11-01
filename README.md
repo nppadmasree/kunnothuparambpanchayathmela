@@ -1,27 +1,47 @@
-# കലോത്സവം 2026 — Live Website v2
+# Kalolsavam 2026 — Version 3
 
-## What's included
-- Public stage schedule with Malayalam search
-- Live ongoing/upcoming/completed stage status
-- Live announcements and results
-- Teacher-only sign-in, stage editing, event reordering, result publishing
-- Realtime Firebase Firestore listeners
-- Responsive single-page website for GitHub Pages
+## Included features
+- Three existing live stage cards and admin editing, with up/down programme ordering
+- Automatic Malayalam public announcements when a stage's saved competition order changes
+- Admin-only student directory and numerical marks out of 300
+- Up to 25 participants per competition, with A (240–300), B (210–239), C (180–209), and no grade (<180)
+- Admin-controlled first/second/third prize separate from grade
+- Public results contain only chest number, name, school, grade and prize
+- School leaderboard: A=5, B=3, C=1 per student in published results
+- CSV import for schools and students
+- Photo gallery with Firebase Storage uploads
 
-## Setup (about 15–25 minutes)
-1. Go to https://console.firebase.google.com and create a project.
-2. Under **Build → Firestore Database**, create a database. Choose a suitable region. You can start in production mode, then immediately publish the rules in `firestore.rules` under **Firestore Database → Rules**. Do not leave permissive test rules active.
-3. Under **Build → Authentication → Sign-in method**, enable **Email/Password**. Under **Users**, add an authorized teacher's email and password.
-4. Under **Project settings → Your apps**, register a **Web** app and copy its `firebaseConfig` values into `firebase-config.js`. These values are not secrets.
-5. Under **Authentication → Users**, copy the teacher's **User UID**. In **Firestore Database → Data**, create collection `admins`, document ID exactly equal to that UID, with field `role` (string) = `admin`. Only add trusted teacher UIDs. The client cannot grant itself admin rights.
-6. In **Authentication → Settings → Authorized domains**, add your GitHub Pages domain (e.g. `yourname.github.io`) if not already present.
-7. Upload `index.html`, `app.js`, and `firebase-config.js` to the root of a GitHub repository. Under **Settings → Pages**, select **Deploy from a branch**, `main`, `/ (root)`.
-8. Open your site, sign in with the teacher account, and save each stage once to initialize the live Firestore records. Publish announcements and results as needed. Open the site on another device to verify live changes.
+## Deploy — important order
+1. Back up the existing GitHub repository files before editing. Existing Firestore data remains untouched.
+2. Firebase Console > Firestore Database > Rules: **replace** old rules with `firestore.rules` and Publish. Do not append to existing rules. Keep your existing `admins/<teacher-uid>` document with `role` string `admin`.
+3. Firebase Console > Storage: create a bucket if needed; this may require upgrading to Blaze billing. Under Storage > Rules replace with `storage.rules` and Publish. If Storage is unavailable, the rest of the site still works; photo uploads will fail until enabled.
+4. GitHub repo `nppadmasree/kunnothuparambpanchayathmela`: upload/replace `index.html`, `app.js`, and `firebase-config.js` in the repository ROOT. Do not upload ZIP as the site.
+5. Wait for GitHub Pages deployment and hard refresh (Ctrl+Shift+R).
+6. Log in, add schools, then students, then choose a stage and competition, click **Load / edit result**, enter participant marks, Save draft, and Publish result.
+7. Check the public results tab and the school points tab from a signed-out browser.
 
-## Important
-- The default event names are **sample/transcribed from the supplied image**; confirm each against the official printed schedule before publishing. Stage times are 9:30 a.m. as shown in the image.
-- This is a genuine realtime implementation, not a simulated refresh, **after Firebase is configured**. Without Firebase credentials the website runs in **demo/read-only mode**.
-- Results are append-only in this version; corrections require editing the result document directly in Firebase Console. A future version can add a safe edit/delete workflow.
-- The Firestore rules protect writes, but you should set Firebase usage/budget alerts and monitor usage for public events.
-- Do not publish teacher passwords in code, GitHub, screenshots, or posters.
-- No backend server is needed for this version: GitHub Pages hosts the frontend, Firebase provides authentication and database.
+## CSV examples
+schools.csv (UTF-8):
+```
+id,name
+S001,School A
+S002,School B
+```
+students.csv (UTF-8):
+```
+chest,name,schoolId
+101,Student One,S001
+102,Student Two,S002
+```
+Upload schools first and wait for them to appear in the school list, then upload students. CSV supports quoted commas and Malayalam UTF-8.
+
+## Notes and limitations
+- Existing V2 simple results in the `results` collection remain stored but are not automatically converted to student-wise V3 results. Re-enter or migrate them manually; do not delete old records until verified.
+- A published result is a snapshot: later changes to a student's directory name or school do not retroactively change already-published results. Load and republish that event to update it.
+- The public points table totals published results only; private drafts do not count. Each student grade in each event contributes points, even if several students from one school participate in the same event.
+- Prize positions are chosen by admin; this version does not auto-rank or decide ties. Only one first, second, and third prize can be selected per item.
+- A schedule change announcement is generated when saving a reordered event list. Draft reordering in the editor is not public until Save stage is clicked. Renaming an item may look like a different event and is not announced as a move.
+- Firebase Storage may require Blaze billing. Set budget alerts, since billing alerts do not impose hard caps.
+- School directory is public, student directory and private results are restricted to admin in Firestore rules.
+- Public result rules restrict top-level fields, and the site deliberately excludes numeric marks from public documents. For higher-assurance deployments, consider stricter nested participant schema validation and server-side publishing.
+- Test login and one sample event before entering all competition results.
