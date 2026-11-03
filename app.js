@@ -3,7 +3,7 @@ import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'htt
 import {getFirestore,doc,getDoc,getDocs,onSnapshot,setDoc,deleteDoc,collection,addDoc,serverTimestamp,query,orderBy,writeBatch} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import {firebaseConfig} from './firebase-config.js';
 const $=id=>document.getElementById(id),esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const defaults=[{id:'1',name:'മഴവില്ല്',time:'09:30',status:'upcoming',current:'',events:[{name:'ഉപന്യാസം',status:'upcoming'},{name:'ലളിതഗാനം',status:'upcoming'},{name:'സോപാനസംഗീതം',status:'upcoming'},{name:'ദേശഭക്തിഗാനം',status:'upcoming'},{name:'മാപ്പിളപ്പാട്ട്',status:'upcoming'}]},{id:'2',name:'നിലാവ്',time:'09:30',status:'upcoming',current:'',events:[{name:'പദ്യം ചൊല്ലൽ (ഇംഗ്ലീഷ്)',status:'upcoming'},{name:'അഭിനയഗാനം (ഇംഗ്ലീഷ്)',status:'upcoming'},{name:'മോണോ ആക്ട്',status:'upcoming'}]},{id:'3',name:'താരകം',time:'09:30',status:'upcoming',current:'',events:[{name:'പദ്യം ചൊല്ലൽ (മലയാളം)',status:'upcoming'},{name:'അഭിനയഗാനം (മലയാളം)',status:'upcoming'},{name:'കഥാകഥനം',status:'upcoming'},{name:'പ്രസംഗം (മലയാളം)',status:'upcoming'}]}];
+const defaults=[{id:'1',name:'ശ്രുതിലയം',time:'09:30',status:'upcoming',current:'',events:[{name:'ഉദ്ഘാടനം',status:'upcoming'},{name:'ലളിതഗാനം',status:'upcoming'},{name:'പദ്യം ചൊല്ലൽ - മലയാളം',status:'upcoming'},{name:'ദേശഭക്തിഗാനം',status:'upcoming'},{name:'സംഘഗാനം',status:'upcoming'},{name:'മാപ്പിളപ്പാട്ട്',status:'upcoming'}]},{id:'2',name:'സ്വരരാഗം',time:'09:30',status:'upcoming',current:'',events:[{name:'കഥാകഥനം',status:'upcoming'},{name:'അഭിനയഗാനം - മലയാളം',status:'upcoming'},{name:'അഭിനയഗാനം - ഇംഗ്ലീഷ്',status:'upcoming'},{name:'പദ്യം ചൊല്ലൽ - ഇംഗ്ലീഷ്',status:'upcoming'},{name:'മോണോ ആക്ട്',status:'upcoming'},{name:'പ്രസംഗം - മലയാളം',status:'upcoming'}]}];
 const themes=['rainbow','moon','star'];
 let persistedStages=structuredClone(defaults),studentUnsub=null;let stages=structuredClone(defaults),manualNotices=[],automaticNotices=[],legacyResults=[],publicResults=[],schools=[],students=[],gallery=[],admin=false,auth,db,activeKey='',editRows=[],dirty=false;
 const toast=s=>{const t=$('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),5500)};
@@ -49,7 +49,7 @@ $('loadResult').onclick=async()=>{if(!admin)return;const stage=$('resultStage').
 async function saveResult(publish){if(!admin)return;const stage=$('resultStage').value,event=$('resultEvent').value;if(!event)return toast('Select competition');const rows=collectRows();if(!rows.length||rows.length>10)return toast('Enter 1–10 winners');const seen=new Set(),participants=[];for(const r of rows){const student=students.find(s=>s.chest===r.chest);if(!student)return toast('Choose a student in every row');if(seen.has(r.chest))return toast('Duplicate student: '+r.chest);seen.add(r.chest);if(!r.prize)return toast('Choose a place for every winner');const school=schools.find(s=>s.id===student.schoolId);if(!school)return toast('Student school missing');participants.push({chest:student.chest,name:student.name,schoolId:school.id,schoolName:school.name,prize:r.prize})}const id=eventKey(stage,event);try{const batch=writeBatch(db);batch.set(doc(db,'privateResults',id),{stage,event,participants,updatedAt:serverTimestamp()});if(publish){batch.set(doc(db,'publicResults',id),{stage,event,participants,updatedAt:serverTimestamp()})}await batch.commit();toast(publish?'Prize results published':'Draft saved privately')}catch(e){toast('Save failed: '+e.message)}}
 $('saveDraft').onclick=()=>saveResult(false);$('publishResult').onclick=()=>saveResult(true);
 // Free GitHub gallery: public repository images folder, no Firebase Storage or billing.
-const GITHUB_OWNER='nppadmasree', GITHUB_REPO='kunnothuparambpanchayathmela';
+const GITHUB_OWNER='nppadmasree', GITHUB_REPO='kannamvalli-kalolsavam-2026';
 async function loadGitHubGallery(){
   const url=`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/images?ref=main`;
   try {
@@ -59,7 +59,7 @@ async function loadGitHubGallery(){
     const files=await response.json();
     gallery=files.filter(f=>f.type==='file'&&/\.(jpe?g|png|webp|gif)$/i.test(f.name))
       .sort((a,b)=>b.name.localeCompare(a.name,'en',{numeric:true}))
-      .slice(0,60).map(f=>({url:`./images/${encodeURIComponent(f.name)}`,caption:f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' '),stage:''}));
+      .slice(0,60).map(f=>({url:f.download_url || new URL(`images/${encodeURIComponent(f.name)}`,document.baseURI).href,caption:f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' '),stage:''}));
     renderGallery();
   }catch(e){console.warn('Gallery fetch failed',e);$('gallery').textContent='ചിത്രങ്ങൾ ഇപ്പോൾ ലഭ്യമല്ല. പിന്നീട് വീണ്ടും ശ്രമിക്കുക.';}
 }
